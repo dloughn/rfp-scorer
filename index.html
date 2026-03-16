@@ -1161,19 +1161,27 @@ function downloadScored(suffix) {
     ws[hAddr1] = { t: 's', v: 'DL Comments' };
   }
 
-  // Write scores
+  // Write scores and comments
   sheetQuestions.forEach((q, idx) => {
     const saved = scores[idx];
-    if (!saved || saved.score === null) return;
-    const cellAddr = XLSX.utils.encode_cell({ r: q.row_index, c: dlCol });
-    ws[cellAddr] = { t: 'n', v: saved.score };
+    if (!saved) return;
+
+    // Write score if present
+    if (saved.score !== null && saved.score !== undefined) {
+      const cellAddr = XLSX.utils.encode_cell({ r: q.row_index, c: dlCol });
+      ws[cellAddr] = { t: 'n', v: saved.score };
+    }
+
+    // Write comment if present (regardless of whether a score exists)
     if (saved.comment && saved.comment.trim()) {
       const commentAddr = XLSX.utils.encode_cell({ r: q.row_index, c: commentCol });
       ws[commentAddr] = { t: 's', v: saved.comment };
     }
   });
 
+  // Expand !ref to include the new comment column
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  if (commentCol > range.e.c) range.e.c = commentCol;
   ws['!ref'] = XLSX.utils.encode_range(range);
 
   const tag = suffix + '_' + currentSheet.replace(/\s+/g, '_');
